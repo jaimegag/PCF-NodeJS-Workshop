@@ -1,0 +1,73 @@
+= CF Workshop Continuous Delivery Lab
+
+== Intro
+
+This lab will guide you through building a *BASIC* continuous delivery pipeline using Jenkins and Cloud Foundry.
+
+== Initial Setup
+
+. Fork the NodeJS Sample App repository. If you do not have a github account, you can use this repo
+
+https://github.com/bbertka-pivotal/nodejs-cf-sample-app.git
+
+. Edit the manifest.yml at the root of the forked spring-music repository. Change the *host* from ${random-word} to your initials. Jenkins does not like the special characters in the host field and will give an error.
+  
+. Login to your Jenkins instance at https://jenkins-0.system.pivotalpoc.hosts.disney.pvt with MyID link
+
+
+== Create the Build Job
+
+. Click *New Item*, give it the name *nodejs-sample* and select _Build a free-style software project_. Then click +OK+.
+
+== Configure Git
+
+. Under *Source Code Management*, select *Git*, and supply your repository URL (e.g. `https://github.com/<YOUR_GIT_USERNAME>/nodejs-cf-sample-app`). Leave credentials as *none*.
+. If you weren't able to fork the sample app, just use https://github.com/bbertka-pivotal/nodejs-cf-sample-app.git
+
+== Configure Build Triggers
+
+. On "Build Triggers", select "Build when a change is pushed to GitHub"
+. On "Build Triggers", select "Poll SCM", and poll for changes each minute by entering */1 * * * * 
+
+== Configure Build Environment
+
+. Check the box "Delete workspace before build starts"
+. Check the box "Provide Node & npm bin/ folder to PATH", and select Installation: NodeJS 6.2.2
+
+== Execute Shell
+
+. Enter in the text box: *npm install*
+
+== Execute Shell
+[source,bash]
+----
+DEPLOYED_VERSION_CMD=$(CF_COLOR=false cf apps | grep 'mapUS.' | cut -d" " -f1)
+export BUILD_VERSION="1.2"
+export DEPLOYED_VERSION_CMD
+echo DEPLOYED_VERSION_CMD
+export ROUTE_VERSION="default"
+echo "Deployed Version: $DEPLOYED_VERSION"
+echo "Route Version: $ROUTE_VERSION"
+
+# Save your api target in variable API
+export API=https://api.system.pivotalpoc.hosts.disney.pvt 
+
+# Set current target api to API
+cf api --skip-ssl-validation $API
+
+# Use the jenkins_service credentials here to login to your org and space
+cf login -u jenkins_service -p cl0udc0w -o YourOrg -s YourSpace
+
+cf push -f manifest.yml
+----
+
+
+== Execute Build Job
+
+. Select *Build Now*.
+
+. Select the build in *Build History*, then select *Console Output*.
+
+. Jenkins should build and push the app, then you can click the link at the bottom to see the running app.
+
+
